@@ -16,7 +16,7 @@ UART0_IBRD_R = 104;  //div is 104.1666667
 UART0_FBRD_R = 11;
 UART0_LCRH_R |=0x70; //fifo and word length of 8 bits
 //enable
-UART0_CTL_R |= (1<<8) | (1<<9);
+UART0_CTL_R |= (1<<9);
 UART0_CTL_R |=(1);
 
 
