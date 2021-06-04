@@ -4,6 +4,7 @@
 #include <stdlib.h>
 #include <math.h>
 
+double totalDistance;
 
 double coordinatesetting (double x,char y){
 if(y= 'S' || 's' || 'W' || 'w' ){x=x*-0.01;}
@@ -28,10 +29,14 @@ d=pow(sin(lon/2.0),2.0);
 dis=sqrt(a+b*c*d);
 dis=2*R*asin(dis);
 
-return dis*1000;
+return dis*1000; // RETURN DISTANCE IN METERS
 
+}
+double sumDis(double x){
 
-
+totalDistance+=x;
+	
+return totalDistance;
 }
 
 int main()
