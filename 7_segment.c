@@ -1,5 +1,5 @@
 #include "GPIO.h"
-unsigned int distance = 129;
+double distance = 129;
 
 void PortBInit(void){
 	SYSCTL_RCGCGPIO_R |= 0x02;
@@ -27,14 +27,14 @@ void seg_output(void){
 	unsigned int f;
 	unsigned int s;
 	unsigned int t;
-	f = distance / 100;
-	s = distance % 100;
-	s = s / 10;
-	t = distance % 10;
-	GPIO_PORTB_DATA_R |= f;
-	GPIO_PORTB_DATA_R |= (s<<4);
-	GPIO_PORTE_DATA_R |= (t<<2);
+	f = distance / 100;		\\store the first digit in f
+	s = (int)distance % 100;
+	s = s / 10;			\\store the second digit in s
+	t = (int)distance % 10;		\\store the third digit in t
+	GPIO_PORTB_DATA_R |= f;		\\Output the first digit from the first 4 bits of port B 
+	GPIO_PORTB_DATA_R |= (s<<4);	\\Output the second digit from the last 4 bits of port B
+	GPIO_PORTE_DATA_R |= (t<<2);	\\Output the third digit from the last 4 bits of port E
 }
 int main(){
-seg_output();
+seg_output();				\\call the function to display the distance(129)
 }
