@@ -48,13 +48,13 @@ void seg_output(void){
 	unsigned int f;
 	unsigned int s;
 	unsigned int t;
-	f = distance / 100;
+	f = distance / 100;		\\store the first digit in f
 	s = (int)distance % 100;
-	s = s / 10;
-	t = (int)distance % 10;
-	GPIO_PORTB_DATA_R |= f;
-	GPIO_PORTB_DATA_R |= (s<<4);
-	GPIO_PORTE_DATA_R |= (t<<2);
+	s = s / 10;			\\store the second digit in s
+	t = (int)distance % 10;		\\store the third digit in t
+	GPIO_PORTB_DATA_R |= f;		\\Output the first digit from the first 4 bits of port B 
+	GPIO_PORTB_DATA_R |= (s<<4);	\\Output the second digit from the last 4 bits of port B
+	GPIO_PORTE_DATA_R |= (t<<2);	\\Output the third digit from the last 4 bits of port E
 }
 
 void led_on(){
