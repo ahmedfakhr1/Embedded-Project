@@ -119,25 +119,45 @@ void parse_msg(char * msg){
 }
 
 int main(){
+	static double lon1 ;
+	static double lat1 ;
+	static double lon2 ;
+	static double lat2 ;
 	int olddist = 0;
 
 	char gps_msg[100] = "$GPGGA,181908.00,3404.7041778,N,07044.3966270,W,4,13,1.00,495.144,M,29.200,M,0.10,0000*40";
 	if(strstr(gps_msg, "$GPGGA")){
-	parse_msg(gps_msg);
+		parse_msg(gps_msg);
 	}
+	lon1 = longitude;
+	lat1 = latitude;
 	PortFInit();
 	PortBInit();
 	PortEInit();
 	
 	
 	while ( distance < 100){
-		distance = dist(36.12, -86.67 , 33.94, -118.4);
+		if(strstr(gps_msg, "$GPGGA")){
+			parse_msg(gps_msg);
+		}
+		lon2 = lon1;
+		lat2 = lat1;
+		lon1 = longitude;
+		lat1 = latitude;
+		distance = dist(lat1, lon1 , lat2, lon2);
 		distance = ADD_distance( distance, &olddist);
 		if(led == 0){led_on();}
+		memset(gps_msg,0,100);
+		strcpy(gps_msg,"$GPGGA,181908.00,7404.7041778,N,07044.3968270,W,4,13,1.00,495.144,M,29.200,M,0.10,0000*40");
 
 	}
 	seg_output();
 
+
+
+
+	while(1);
+}
 
 
   
