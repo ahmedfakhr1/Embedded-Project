@@ -64,6 +64,15 @@ void led_on(){
 	}
 }
 
+double To_decimal(double i){
+	int a;
+	double b;
+	a = i/100;
+	b = (i/100 - a)* 100;
+	b /= 60;
+	b += a;
+	return b;
+}
 double dist(double lat1, double lon1,double lat2,double lon2){
 double lon,lat;
 double a,b,c,d,dis;
@@ -129,8 +138,8 @@ int main(){
 	if(strstr(gps_msg, "$GPGGA")){
 		parse_msg(gps_msg);
 	}
-	lon1 = longitude;
-	lat1 = latitude;
+	lon1 = To_decimal(longitude);
+	lat1 = To_decimal(latitude);
 	PortFInit();
 	PortBInit();
 	PortEInit();
@@ -142,8 +151,9 @@ int main(){
 		}
 		lon2 = lon1;
 		lat2 = lat1;
-		lon1 = longitude;
-		lat1 = latitude;
+		lon1 = To_decimal(longitude);
+		lat1 = To_decimal(latitude);
+		//distance = dist(36.12, -86.67 , 33.94, -118.4);
 		distance = dist(lat1, lon1 , lat2, lon2);
 		distance = ADD_distance( distance, &olddist);
 		if(led == 0){led_on();}
@@ -153,11 +163,6 @@ int main(){
 	}
 	seg_output();
 
-
-
-
-	while(1);
-}
 
 
   
