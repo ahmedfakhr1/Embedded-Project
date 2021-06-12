@@ -133,16 +133,34 @@ int main(){
 	static double lon2 ;
 	static double lat2 ;
 	int olddist = 0;
-
-	char gps_msg[100] = "$GPGGA,181908.00,3404.7041778,N,07044.3966270,W,4,13,1.00,495.144,M,29.200,M,0.10,0000*40";
-	if(strstr(gps_msg, "$GPGGA")){
-		parse_msg(gps_msg);
-	}
-	lon1 = To_decimal(longitude);
-	lat1 = To_decimal(latitude);
+	char v;
+	int i =0;
+	char gps_msg[100];
+//	char gps_msg[100] = "$GPGGA,181908.00,3404.7041778,N,07044.3966270,W,4,13,1.00,495.144,M,29.200,M,0.10,0000*40";
 	PortFInit();
 	PortBInit();
 	PortEInit();
+	uart0init();
+	while (1){
+		v = UART_read();
+		if (v == '$'){
+			while (v != '*'){
+				
+				gps_msg[i] = v;
+				v = UART_read();
+			}
+				if(strstr(gps_msg, "$GPGGA")){
+					parse_msg(gps_msg);
+					break;
+				}
+				memset(gps_msg,0,100);
+		}
+	}
+//	if(strstr(gps_msg, "$GPGGA")){
+//		parse_msg(gps_msg);
+//	}
+	lon1 = To_decimal(longitude);
+	lat1 = To_decimal(latitude);
 	
 	
 	while ( distance < 100){
