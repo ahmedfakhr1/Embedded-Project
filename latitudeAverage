@@ -1,0 +1,17 @@
+double averaging_lat(double x){
+	
+	static double total=0;
+	static int n2=0;
+	double res=0;
+	total += x;
+	n2++;
+	if(n2==freq){
+		res = total/n2;
+	total=0 ;
+		n2=0;
+		return res;
+	}
+	return res;
+	
+	
+}
