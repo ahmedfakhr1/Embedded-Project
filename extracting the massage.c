@@ -132,54 +132,87 @@ int main(){
 	static double lat1 ;
 	static double lon2 ;
 	static double lat2 ;
-	int olddist = 0;
-	char v;
-	int i =0;
+	int n;
+	static char v;
+	int ti=0;
+	int i =6;
 	char gps_msg[100];
 //	char gps_msg[100] = "$GPGGA,181908.00,3404.7041778,N,07044.3966270,W,4,13,1.00,495.144,M,29.200,M,0.10,0000*40";
 	PortFInit();
 	PortBInit();
 	PortEInit();
 	uart0init();
-	while (1){
-		v = UART_read();
-		if (v == '$'){
-			while (v != '*'){
-				
-				gps_msg[i] = v;
-				v = UART_read();
-			}
-				if(strstr(gps_msg, "$GPGGA")){
-					parse_msg(gps_msg);
-					break;
-				}
-				memset(gps_msg,0,100);
-		}
-	}
+//	UART_write('e');
 //	if(strstr(gps_msg, "$GPGGA")){
 //		parse_msg(gps_msg);
 //	}
-	lon1 = To_decimal(longitude);
-	lat1 = To_decimal(latitude);
+//	lon1 = To_decimal(longitude);
+//	lat1 = To_decimal(latitude);
 	
 	
 	while ( distance < 100){
-		if(strstr(gps_msg, "$GPGGA")){
-			parse_msg(gps_msg);
+			while (1){
+		v = UART_read();
+
+//		UART_write(v)/
+		if (v == '$'){
+			for(ti=0;ti<6;ti++){
+			gps_msg[ti] = v;
+
+		 v = UART_read();
+			}
+			if(gps_msg[1] =='G'){
+			if(gps_msg[2] == 'P'){
+				if(gps_msg[3] == 'G'){
+					if(gps_msg[4] == 'G'){
+					if(gps_msg[5] == 'A'){
+						i=7;
+						gps_msg[6] = ',';
+
+							while (v != '*'){
+							v = UART_read();
+							gps_msg[i] = v;
+							i++;
+							
+				
+			}
+							for (n = 0 ; n<100 ; n++){
+							if(gps_msg[n]== 'M'){
+								turnRedOn(1);
+								break;
+							}
+							}
+				parse_msg(gps_msg);
+				break;
+			}
 		}
+		}
+		}
+
+					
+
+		}
+				memset(gps_msg,0,100);
+	}
+}
+//		if(strstr(gps_msg, "$GPGGA")){
+//			parse_msg(gps_msg);
+//		}
 		lon2 = lon1;
 		lat2 = lat1;
 		lon1 = To_decimal(longitude);
 		lat1 = To_decimal(latitude);
 		//distance = dist(36.12, -86.67 , 33.94, -118.4);
-		distance = dist(lat1, lon1 , lat2, lon2);
-		distance = ADD_distance( distance, &olddist);
+	//	distance = dist(lat1, lon1 , lat2, lon2);
+		if(lon2 != 0 && lat2 !=0){
+		distance +=dist(lat1, lon1 , lat2, lon2);
 		if(led == 0){led_on();}
+		seg_output();
+		}
 		memset(gps_msg,0,100);
-		strcpy(gps_msg,"$GPGGA,181908.00,7404.7041778,N,07044.3968270,W,4,13,1.00,495.144,M,29.200,M,0.10,0000*40");
+//		strcpy(gps_msg,"$GPGGA,181908.00,7404.7041778,N,07044.3968270,W,4,13,1.00,495.144,M,29.200,M,0.10,0000*40");
 
 	}
-	seg_output();
 
 
 
