@@ -1,0 +1,293 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include "GPIO.h"
+#include <math.h>
+#define PI 3.141592653589793238
+#define R 6372.76152
+#define TO_RAD (3.1415926536 / 180)
+
+double distance = 0;
+int led = 0; 
+double latitude;
+double longitude;
+double lat;
+double lon;
+int freq=4;
+
+void PortFInit(void){
+	SYSCTL_RCGCGPIO_R |= 0x20;
+	while((SYSCTL_PRGPIO_R & 0x20) != 0x20);
+	GPIO_PORTF_LOCK_R = 0x4C4F434B;
+	GPIO_PORTF_DIR_R = 0x0E;
+	GPIO_PORTF_CR_R = 0xff;
+	GPIO_PORTF_DEN_R = 0xff;
+	GPIO_PORTF_AMSEL_R &= ~0x0E;
+	GPIO_PORTF_PCTL_R &= ~0x0000FFF0;
+}
+
+void PortBInit(void){
+	SYSCTL_RCGCGPIO_R |= 0x02;
+	while((SYSCTL_PRGPIO_R & 0x02) != 0x02);
+	GPIO_PORTB_LOCK_R = 0x4C4F434B;
+	GPIO_PORTB_DIR_R |= 0xff;
+	GPIO_PORTB_CR_R = 0xff;
+	GPIO_PORTB_DEN_R = 0xff;
+	GPIO_PORTB_AMSEL_R &= ~0xff;
+	GPIO_PORTB_PCTL_R &= ~0xFFFFFFFF;
+}
+
+void PortEInit(void){
+	SYSCTL_RCGCGPIO_R |= 0x10;
+	while((SYSCTL_PRGPIO_R & 0x10) != 0x10);
+	GPIO_PORTE_LOCK_R = 0x4C4F434B;
+	GPIO_PORTE_DIR_R = 0x3C;
+	GPIO_PORTE_CR_R = 0x3F;
+	GPIO_PORTE_DEN_R = 0x3C;
+	GPIO_PORTE_AMSEL_R &= ~0x3C;
+	GPIO_PORTE_PCTL_R &= ~0xFFFF00;
+}
+
+void uart0init(void){
+	SYSCTL_RCGCUART_R |= 0x80;
+	SYSCTL_RCGCGPIO_R|=0X10; //turning port a on
+	while ((SYSCTL_PRGPIO_R&0X10) != 0x10){ };
+
+
+	//uart settings
+	UART7_CTL_R &= ~0x00000001; //disable
+	//settings
+	UART7_IBRD_R = 104;  //div is 104.1666667
+	UART7_FBRD_R = 11;
+	UART7_LCRH_R |=0x70; //fifo and word length of 8 bits 0xB0
+	//enable
+	UART7_CTL_R |= (1<<9) | (1<<8);
+	UART7_CTL_R |=(1);
+	//GPIO settings
+	//gpio a settings
+	GPIO_PORTE_DEN_R |= 0x03;
+	GPIO_PORTE_AMSEL_R&=~0x03;
+	GPIO_PORTE_DIR_R &= ~0x01 ;
+	GPIO_PORTE_LOCK_R = 0x4C4F434B;
+	GPIO_PORTE_CR_R |= 0x01;
+	GPIO_PORTE_AFSEL_R |=0x01;
+	GPIO_PORTE_PCTL_R =(GPIO_PORTE_PCTL_R& ~0xFF)+0x01;
+
+}
+
+void seg_output(void){
+	unsigned int f;
+	unsigned int s;
+	unsigned int t;
+	f = distance / 100;
+	s = (int)distance % 100;
+	s = s / 10;
+	t = (int)distance % 10;
+	GPIO_PORTB_DATA_R |= f;
+	GPIO_PORTB_DATA_R |= (s<<4);
+	GPIO_PORTE_DATA_R |= (t<<2);
+}
+
+void led_on(){
+if(distance > 100){
+GPIO_PORTF_DATA_R |= 0x0E;
+	led = 1;
+}
+}
+
+void turnRedOn(int x){
+if (x==1) GPIO_PORTF_DATA_R|=0x02;
+}
+
+int UART_Available(){
+	
+	return ((UART7_FR_R & 0x10) == 0x10)? 0:1;
+}
+
+char UART_read(){
+	while(UART_Available() != 1);
+
+	return UART7_DR_R & 0xFF;
+}
+
+void parse_msg(char * msg){
+   int counter = 1;
+   int n1;
+   int n2;
+   char * element = strtok(msg, ",");
+
+  while( element!= NULL ) {
+		element = strtok(NULL, ",");
+		switch(counter){
+					case 2 :
+					latitude = strtod(element,NULL);
+					break;
+					case 3 :
+					n1 = (*element == 'N') ? 1 : -1;
+					latitude *= n1 ;
+					break;
+					case 4 :
+					longitude = strtod(element,NULL);
+					break;
+					case 5 :
+					n2 = (*element == 'E') ? 1 : -1;
+					longitude *= n2 ;
+			}
+			counter++;
+    }
+	}
+
+double To_decimal(double i){
+	int a;
+	double b;
+	a = i/100;
+	b = (i/100 - a)* 100;
+	b /= 60;
+	b += a;
+	return b;
+}
+		
+double dist( double th1, double ph1, double th2, double ph2)
+{
+	static double dx, dy, dz,dist;
+	ph1 -= ph2;
+	ph1 *= TO_RAD;
+	th1 *= TO_RAD;
+	th2 *= TO_RAD;
+
+	dz = sin(th1) - sin(th2);
+	dx = cos(ph1) * cos(th1) - cos(th2);
+	dy = sin(ph1) * cos(th1);
+	dist=(asin(sqrt(dx * dx + dy * dy + dz * dz) / 2) * 2 * R);
+
+	return dist*1000 ;
+}
+
+double averaging_lon(double x){
+	
+	static double total=0;
+	static int n1=0;
+	double res=0;
+	total += x;
+	n1++;
+	if(n1==freq){
+		res = total/n1;
+	total=0 ;
+		n1=0;
+		return res;
+	}
+	return res;
+	
+	
+}
+double averaging_lat(double x){
+	
+	static double total=0;
+	static int n2=0;
+	double res=0;
+	total += x;
+	n2++;
+	if(n2==freq){
+		res = total/n2;
+	total=0 ;
+		n2=0;
+		return res;
+	}
+	return res;
+	
+	
+}
+int main(){
+	static double lon1 ;
+	static double lat1 ;
+	static double lon2 ;
+	static double lat2 ;
+	int n;
+	static char v;
+	int ti=0;
+	int i =6;
+	char gps_msg[100];
+	int old_dist;
+	int b;
+	int xx=0;
+	PortFInit();
+	PortBInit();
+	PortEInit();
+	uart0init();
+
+	while ( distance < 100){
+		
+		for(xx=0;xx<freq;xx++){
+			while (1){
+				v = UART_read();
+				if (v == '$'){
+					for(ti=0;ti<6;ti++){
+						gps_msg[ti] = v;
+						v = UART_read();
+					}
+					if(gps_msg[1] =='G'){
+						if(gps_msg[2] == 'P'){
+							if(gps_msg[3] == 'G'){
+								if(gps_msg[4] == 'G'){
+									if(gps_msg[5] == 'A'){
+										i=7;
+										gps_msg[6] = ',';
+										while (v != '*'){
+											v = UART_read();
+											gps_msg[i] = v;
+											i++;							
+										}
+										for (n = 0 ; n<100 ; n++){
+											if(gps_msg[n]== 'M'){
+												turnRedOn(1);
+												break;
+											}
+										}
+										parse_msg(gps_msg);
+										lon = To_decimal(longitude);
+										lat = To_decimal(latitude);
+										lat = averaging_lat(lat);
+										lon = averaging_lon(lon);
+										break;
+									}
+								}
+							}
+						}	
+					}
+					memset(gps_msg,0,100);
+				}
+			}
+		}
+		lon2 = lon1;
+		lat2 = lat1;
+		lon1 = lon;
+		lat1 = lat;
+		if(lon2 != 0 && lat2 !=0){
+			old_dist = distance;
+			distance +=dist(lat1, lon1 , lat2, lon2);
+			if(distance - old_dist >5){
+				distance -= 5;
+			}
+			if(distance - old_dist >10){
+				distance -= 10;
+			}
+			if(distance - old_dist >20){
+				distance -= 20;
+			}
+			if(distance <= 0){
+				lon1 = lon2;
+				lat1 = lat2;
+				distance = old_dist;
+			}
+
+
+			
+			if(led == 0){
+				led_on();
+			}
+		}
+		memset(gps_msg,0,100);
+	}
+	seg_output();
+	while(1);
+}
