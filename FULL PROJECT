@@ -147,20 +147,24 @@ double To_decimal(double i){
 	return b;
 }
 		
-double dist( double th1, double ph1, double th2, double ph2)
-{
-	static double dx, dy, dz,dist;
-	ph1 -= ph2;
-	ph1 *= TO_RAD;
-	th1 *= TO_RAD;
-	th2 *= TO_RAD;
+double dist(double lon1, double lon2,double lat1,double lat2){
+double lon,lat;
+double a,b,c,d,dis;
 
-	dz = sin(th1) - sin(th2);
-	dx = cos(ph1) * cos(th1) - cos(th2);
-	dy = sin(ph1) * cos(th1);
-	dist=(asin(sqrt(dx * dx + dy * dy + dz * dz) / 2) * 2 * R);
+lon=lon2-lon1;
+lat=lat2-lat1;
+lon=lon*(pi/180.0);
+lat=lat*(pi/180.0);
 
-	return dist*1000 ;
+a=pow(sin(lat/2.0),2.0);
+b=cos(lat1*(pi/180.0));
+c=cos(lat2*(pi/180.0));
+d=pow(sin(lon/2.0),2.0);
+dis=sqrt(a+b*c*d);
+dis=2*R*asin(dis);
+
+return dis*1000; // RETURN DISTANCE IN METERS
+
 }
 
 double averaging_lon(double x){
